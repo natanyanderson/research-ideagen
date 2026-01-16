@@ -1,3 +1,4 @@
 arxiv
 openai
 python-dotenv
+numpy
