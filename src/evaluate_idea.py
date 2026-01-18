@@ -29,6 +29,23 @@ def cosine_similarity(vec1, vec2):
     """Computes the cosine similarity between two vectors."""
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
+def load_embedding_from_db(embedding_blob):
+    """Helper function to load embeddings from database, handling multiple formats."""
+    import json
+    try:
+        # Try reading as float32 (new format)
+        return np.frombuffer(embedding_blob, dtype=np.float32)
+    except ValueError:
+        try:
+            # Try reading as JSON string (old format)
+            return np.array(json.loads(embedding_blob.decode()))
+        except:
+            try:
+                # Try reading as float64
+                return np.frombuffer(embedding_blob, dtype=np.float64)
+            except:
+                raise ValueError("Could not parse embedding from database")
+
 def assess_application_novelty(idea_description):
     """
     Uses LLM to assess whether the idea applies an established method to a novel domain/problem.
@@ -96,9 +113,9 @@ def calculate_novelty_score(idea_embedding, idea_description):
     conn.close()
 
     if not corpus_embeddings_blob:
-        return 0, 0.0, 0.0, None, None
+        return 0, 0.0, 0.0, None, None, None
 
-    corpus_embeddings = [np.frombuffer(b[0], dtype=np.float32) for b in corpus_embeddings_blob]
+    corpus_embeddings = [load_embedding_from_db(b[0]) for b in corpus_embeddings_blob]
     
     similarities = [cosine_similarity(idea_embedding, ce) for ce in corpus_embeddings]
     max_similarity = np.max(similarities) if similarities else 0.0
