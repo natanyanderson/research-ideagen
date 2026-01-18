@@ -18,7 +18,7 @@ DATABASE_NAME = "papers.db"
 MAX_PAPERS = 1000
 BATCH_SIZE = 50
 ARXIV_QUERY = "cat:cs.*"
-DATE_RANGE = "2024-01-01 TO 2025-12-31"
+DATE_RANGE = "Last 2 years"
 
 def get_embedding(text):
     """Generates an embedding for the given text using OpenAI's API."""
@@ -82,12 +82,6 @@ def fetch_and_store_papers():
     
     try:
         for result in search.results():
-            published_year = result.published.year
-            if not (2024 <= published_year <= 2025):
-                if published_year < 2024:
-                    break
-                continue
-
             paper_id = result.entry_id.split('/')[-1]
             if 'v' in paper_id:
                 paper_id = paper_id.split('v')[0]
