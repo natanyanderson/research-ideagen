@@ -1,212 +1,172 @@
-import sqlite3
-import openai
-import os
-import json
-import numpy as np
-from dotenv import load_dotenv
 import sys
+import time
+import os
 import re
+from generate_ideas import get_top_n_papers, get_embedding
+from evaluate_idea import evaluate_idea, calculate_novelty_score
+import openai
+from dotenv import load_dotenv
+import numpy as np
+import sqlite3
 
+# Load environment variables
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY not found in .env file")
 
-def cosine_similarity(a, b):
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
+DATABASE_NAME = "papers.db"
 
-def evaluate_idea(idea, conn):
-    """Evaluate a single idea and return scores"""
-    # Get idea embedding
-    response = openai.embeddings.create(
-        input=idea,
-        model="text-embedding-3-small"
-    )
-    idea_embedding = response.data[0].embedding
-    
-    # Calculate novelty via corpus similarity
-    cursor = conn.cursor()
-    cursor.execute("SELECT embedding FROM embeddings")
-    similarities = []
-    for row in cursor.fetchall():
-        emb = json.loads(row[0].decode())
-        sim = cosine_similarity(idea_embedding, emb)
-        similarities.append(sim)
-    
-    max_similarity = np.max(similarities)
-    
-    # Determine novelty score
-    if max_similarity < 0.40:
-        novelty_score = 5
-    elif max_similarity < 0.50:
-        novelty_score = 4
-    elif max_similarity < 0.60:
-        novelty_score = 3
-    elif max_similarity < 0.70:
-        novelty_score = 2
-    else:
-        novelty_score = 1
-    
-    # Use LLM to evaluate other criteria
-    eval_prompt = f"""Rate this research idea on four criteria (1-5 scale):
+def cosine_similarity(vec1, vec2):
+    """Computes the cosine similarity between two vectors."""
+    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
-Research Idea: {idea}
+def generate_and_refine_ideas(topic, num_desired_ideas=3, max_iterations=5):
+    """
+    Generates, evaluates, and refines research ideas iteratively.
+    """
+    # Check if database exists
+    if not os.path.exists(DATABASE_NAME):
+        print(f"❌ Database not found: {DATABASE_NAME}")
+        print("Please run 'python src/ingest_arxiv.py' first to populate the database.")
+        return []
+    
+    print(f"Generating and refining research ideas for: {topic}")
+    print("=" * 70)
+    print(f"Target: {num_desired_ideas} high-quality ideas")
+    print(f"Criteria: Overall score ≥ 3.5/5.0, Novelty ≥ 2/5")
+    print("=" * 70)
 
-Respond in this exact format:
-Feasibility: [1-5]
-Impact: [1-5]
-Clarity: [1-5]
-Grounding: [1-5]
-"""
-    
-    eval_response = openai.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": eval_prompt}],
-        temperature=0.3
-    )
-    
-    llm_eval = eval_response.choices[0].message.content
-    
-    feasibility = int(re.search(r'Feasibility:\s*(\d)', llm_eval).group(1))
-    impact = int(re.search(r'Impact:\s*(\d)', llm_eval).group(1))
-    clarity = int(re.search(r'Clarity:\s*(\d)', llm_eval).group(1))
-    grounding = int(re.search(r'Grounding:\s*(\d)', llm_eval).group(1))
-    
-    overall = (novelty_score + feasibility + impact + clarity + grounding) / 5.0
-    
-    return {
-        'idea': idea,
-        'novelty': novelty_score,
-        'feasibility': feasibility,
-        'impact': impact,
-        'clarity': clarity,
-        'grounding': grounding,
-        'overall': overall,
-        'max_similarity': max_similarity
-    }
+    accepted_ideas = []
+    iteration = 0
 
-def generate_ideas(topic, conn, num_ideas=5, excluded_ideas=None):
-    """Generate research ideas for a topic"""
-    # Get top 5 related papers
-    response = openai.embeddings.create(
-        input=topic,
-        model="text-embedding-3-small"
-    )
-    topic_embedding = response.data[0].embedding
-    
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT p.title, p.abstract, e.embedding
-        FROM papers p
-        JOIN embeddings e ON p.arxiv_id = e.arxiv_id
-    """)
-    
-    results = []
-    for row in cursor.fetchall():
-        title, abstract, embedding_bytes = row
-        embedding = json.loads(embedding_bytes.decode())
-        similarity = cosine_similarity(topic_embedding, embedding)
-        results.append((similarity, title, abstract))
-    
-    results.sort(reverse=True, key=lambda x: x[0])
-    top_papers = results[:5]
-    
-    # Build context
-    context = f"Topic: {topic}\n\nTop related papers:\n"
-    for i, (score, title, abstract) in enumerate(top_papers, 1):
-        context += f"\n{i}. {title} (similarity: {score:.3f})\n"
-        context += f"   Abstract: {abstract[:200]}...\n"
-    
-    # Add exclusion clause if needed
-    exclusion = ""
-    if excluded_ideas:
-        exclusion = f"\n\nAvoid these ideas (already generated):\n"
-        for idx, idea in enumerate(excluded_ideas, 1):
-            exclusion += f"{idx}. {idea}\n"
-    
-    # Generate ideas
-    prompt = f"""Generate {num_ideas} novel research ideas based on the topic and related work.
+    while len(accepted_ideas) < num_desired_ideas and iteration < max_iterations:
+        iteration += 1
+        print(f"\nIteration {iteration}:")
+        print("-" * 70)
 
-{context}{exclusion}
+        # Generate topic embedding and get related papers
+        topic_embedding = get_embedding(topic)
+        if topic_embedding is None:
+            print("❌ Could not generate embedding for the topic. Exiting.")
+            return []
 
-Requirements:
-- Address real gaps, not just "apply X to Y"
-- Be specific and actionable
-- Build meaningfully on existing work
-- Avoid simple domain transfer
+        top_papers = get_top_n_papers(topic_embedding, top_n=5)
+        
+        context_papers = ""
+        for i, (sim, paper_id, title, abstract) in enumerate(top_papers):
+            context_papers += f"Paper {i+1} (Similarity: {sim:.3f}):\n"
+            context_papers += f"Title: {title}\n"
+            context_papers += f"Abstract: {abstract[:300]}...\n\n"
+
+        generation_prompt = f"""You are an expert research assistant. Your task is to generate novel and feasible research ideas based on the provided topic and relevant scientific papers.
+
+Topic: "{topic}"
+
+Relevant Papers (for context and inspiration):
+{context_papers}
+
+Generate 5 distinct research ideas. Each idea should be a single sentence, clearly stating the core concept. Focus on identifying gaps, extending existing work, or combining concepts in novel ways. Avoid simple "apply X to Y" ideas.
 
 Format each as:
-[Idea number]. [Title]: [One sentence description]
+1. [Idea]
+2. [Idea]
+3. [Idea]
+4. [Idea]
+5. [Idea]
 """
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a helpful research assistant."},
+                    {"role": "user", "content": generation_prompt}
+                ],
+                max_tokens=700,
+                n=1,
+                stop=None,
+                temperature=0.8,
+            )
+            generated_ideas_raw = response.choices[0].message.content.strip()
+            generated_ideas = []
+            for line in generated_ideas_raw.split('\n'):
+                line = line.strip()
+                if re.match(r'^\d+\.', line):
+                    idea = re.sub(r'^\d+\.\s*', '', line)
+                    if idea:
+                        generated_ideas.append(idea)
+
+        except openai.APIError as e:
+            print(f"❌ OpenAI API Error during idea generation: {e}")
+            break
+        except Exception as e:
+            print(f"❌ An unexpected error occurred during idea generation: {e}")
+            break
+
+        if not generated_ideas:
+            print("⚠️  No ideas generated in this iteration")
+            continue
+
+        for idea_description in generated_ideas:
+            if len(accepted_ideas) >= num_desired_ideas:
+                break
+
+            print(f"\nEvaluating: \"{idea_description[:70]}...\"")
+            eval_results = evaluate_idea(idea_description)
+
+            if eval_results:
+                novelty = eval_results["novelty"]
+                overall_score = eval_results["overall_score"]
+
+                if overall_score >= 3.5 and novelty >= 2:
+                    print(f"  ✓ ACCEPTED (Overall: {overall_score:.1f}/5.0, Novelty: {novelty}/5)")
+                    accepted_ideas.append({
+                        "idea": idea_description,
+                        "overall_score": overall_score,
+                        "novelty": novelty,
+                        "feasibility": eval_results["feasibility"],
+                        "impact": eval_results["impact"],
+                        "clarity": eval_results["clarity"],
+                        "grounding": eval_results["grounding"]
+                    })
+                else:
+                    print(f"  ✗ REJECTED (Overall: {overall_score:.1f}/5.0, Novelty: {novelty}/5)")
+            
+            time.sleep(0.5)
+
+        print(f"\nGood ideas so far: {len(accepted_ideas)}/{num_desired_ideas}")
+        time.sleep(1)
+
+    print("\n" + "=" * 70)
+    print("FINAL RESULTS")
+    print("=" * 70)
     
-    chat_response = openai.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.9
-    )
+    if not accepted_ideas:
+        print("\n⚠️  Could not generate enough high-quality ideas within the given iterations.")
+        print("Consider:")
+        print("  - Trying a different topic")
+        print("  - Adjusting evaluation criteria")
+        print("  - Increasing max_iterations")
+    else:
+        for i, idea_data in enumerate(accepted_ideas, 1):
+            print(f"\n{i}. {idea_data['idea']}")
+            print(f"   Overall: {idea_data['overall_score']:.1f}/5")
+            print(f"   Novelty: {idea_data['novelty']}/5, Feasibility: {idea_data['feasibility']}/5")
+            print(f"   Impact: {idea_data['impact']}/5, Clarity: {idea_data['clarity']}/5, Grounding: {idea_data['grounding']}/5")
     
-    # Parse ideas
-    ideas_text = chat_response.choices[0].message.content
-    ideas = []
-    for line in ideas_text.split('\n'):
-        if re.match(r'^\d+\.', line.strip()):
-            idea = re.sub(r'^\d+\.\s*', '', line.strip())
-            ideas.append(idea)
+    print("\n" + "=" * 70)
+    return accepted_ideas
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python src/generate_and_refine.py \"your research topic\"")
+        sys.exit(1)
     
-    return ideas
-
-if len(sys.argv) < 2:
-    print("Usage: python generate_and_refine.py 'your research topic'")
-    sys.exit(1)
-
-topic = " ".join(sys.argv[1:])
-
-print(f"Generating and refining research ideas for: {topic}")
-print("=" * 70)
-print()
-
-conn = sqlite3.connect("papers.db")
-
-good_ideas = []
-all_generated = []
-iteration = 0
-max_iterations = 5
-
-while len(good_ideas) < 3 and iteration < max_iterations:
-    iteration += 1
-    print(f"Iteration {iteration}:")
-    print("-" * 70)
-    
-    # Generate ideas
-    ideas = generate_ideas(topic, conn, num_ideas=5, excluded_ideas=all_generated)
-    all_generated.extend(ideas)
-    
-    # Evaluate each idea
-    for i, idea in enumerate(ideas, 1):
-        print(f"\nEvaluating idea {i}: {idea[:60]}...")
-        scores = evaluate_idea(idea, conn)
-        
-        print(f"  Novelty: {scores['novelty']}/5 (max_sim: {scores['max_similarity']:.3f})")
-        print(f"  Overall: {scores['overall']:.1f}/5")
-        
-        # Check if it passes threshold
-        if scores['overall'] >= 3.5 and scores['novelty'] >= 2:
-            print(f"  ✓ ACCEPTED")
-            good_ideas.append(scores)
-        else:
-            print(f"  ✗ REJECTED (overall: {scores['overall']:.1f}, novelty: {scores['novelty']})")
-    
-    print(f"\nGood ideas so far: {len(good_ideas)}/3")
-    print()
-
-conn.close()
-
-print("=" * 70)
-print("FINAL RESULTS")
-print("=" * 70)
-print()
-
-for i, idea_scores in enumerate(good_ideas[:3], 1):
-    print(f"{i}. {idea_scores['idea']}")
-    print(f"   Overall: {idea_scores['overall']:.1f}/5")
-    print(f"   Novelty: {idea_scores['novelty']}/5, Feasibility: {idea_scores['feasibility']}/5")
-    print(f"   Impact: {idea_scores['impact']}/5, Clarity: {idea_scores['clarity']}/5, Grounding: {idea_scores['grounding']}/5")
-    print()
+    topic_text = " ".join(sys.argv[1:])
+    try:
+        generate_and_refine_ideas(topic_text)
+    except KeyboardInterrupt:
+        print("\n\n⚠️  Process interrupted by user")
+    except Exception as e:
+        print(f"\n❌ Fatal error: {e}")
