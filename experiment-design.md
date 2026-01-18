@@ -18,6 +18,17 @@ Participants are given a research topic and 30 minutes to generate 5 research id
 
 **AI-Assisted group**: Given access to ChatGPT with a starter prompt template ("Generate 5 research ideas about [topic]"). Can iterate and refine with the tool during the session.
 
+## Pre-Survey
+All participants will complete a brief survey before the ideation task to measure prior AI tool experience (potential confounding variable). This allows us to control for baseline familiarity in our analysis.
+
+**Survey Questions:**
+1. How often do you use AI tools like ChatGPT, Claude, or similar assistants? (Never / Rarely / Monthly / Weekly / Daily)
+2. Which AI tools have you used in the past 6 months? (Select all that apply: ChatGPT, Claude, Copilot, Gemini, Other, None)
+3. For what purposes do you primarily use AI tools? (Select all that apply: Writing/editing, Coding, Research, Brainstorming ideas, Learning new topics, Other, I don't use AI tools)
+4. How comfortable are you using AI tools for creative or research tasks? (1 = Not comfortable at all, 5 = Very comfortable)
+5. Have you ever used AI tools specifically for generating research ideas? (Yes / No / Not sure)
+6. How many years have you been involved in academic research? (Less than 1 year / 1-2 years / 3-5 years / 5+ years)
+
 ## Measurements
 1. **Novelty**: Semantic similarity to existing literature corpus (using our embeddings pipeline)
 2. **Diversity**: Semantic distance between participant's own ideas
