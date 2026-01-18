@@ -29,11 +29,66 @@ def cosine_similarity(vec1, vec2):
     """Computes the cosine similarity between two vectors."""
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
-def calculate_novelty_score(idea_embedding):
+def assess_application_novelty(idea_description):
     """
-    Calculates a novelty score based on semantic similarity to the corpus.
-    1 (not novel) to 5 (highly novel).
+    Uses LLM to assess whether the idea applies an established method to a novel domain/problem.
+    Returns a score from 1-5 for application novelty.
     """
+    prompt = f"""You are evaluating the novelty of a research idea. Focus specifically on whether the APPLICATION or DOMAIN is novel, even if the methods used are well-established.
+
+Research Idea: "{idea_description}"
+
+Answer these questions:
+1. Does this idea apply an established technique/method to a new domain or problem?
+2. Is the application context significantly different from typical uses of this method?
+3. Would this represent a meaningful extension of where/how this method is used?
+
+Rate the APPLICATION NOVELTY on a scale of 1-5:
+- 1 = Standard application of a method in its typical domain
+- 2 = Minor variation on typical applications
+- 3 = Moderate shift in application domain or context
+- 4 = Significant new application area
+- 5 = Highly novel application to a previously unexplored domain
+
+Provide your response in this exact format:
+Application Novelty Score: [1-5]
+Reasoning: [Brief explanation focusing on novelty of application/domain]
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a research evaluator focused on assessing application novelty."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=300,
+            temperature=0.3,
+        )
+        
+        eval_text = response.choices[0].message.content.strip()
+        
+        # Parse the score
+        score_match = re.search(r'Application Novelty Score:\s*(\d)', eval_text)
+        reasoning_match = re.search(r'Reasoning:\s*(.+)', eval_text, re.DOTALL)
+        
+        if score_match:
+            score = int(score_match.group(1))
+            reasoning = reasoning_match.group(1).strip() if reasoning_match else "No reasoning provided"
+            return score, reasoning
+        else:
+            return None, None
+            
+    except Exception as e:
+        print(f"  ⚠️  Application novelty check failed: {e}")
+        return None, None
+
+def calculate_novelty_score(idea_embedding, idea_description):
+    """
+    Calculates a novelty score using both semantic similarity and application novelty.
+    Returns the max of the two scores (1-5).
+    """
+    # Semantic similarity-based novelty
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute("SELECT embedding FROM embeddings")
@@ -41,7 +96,7 @@ def calculate_novelty_score(idea_embedding):
     conn.close()
 
     if not corpus_embeddings_blob:
-        return 0, 0.0, 0.0
+        return 0, 0.0, 0.0, None, None
 
     corpus_embeddings = [np.frombuffer(b[0], dtype=np.float32) for b in corpus_embeddings_blob]
     
@@ -51,17 +106,27 @@ def calculate_novelty_score(idea_embedding):
 
     # Map similarity to novelty score (inverse relationship)
     if max_similarity > 0.75:
-        novelty_score = 1
+        similarity_novelty_score = 1
     elif max_similarity > 0.65:
-        novelty_score = 2
+        similarity_novelty_score = 2
     elif max_similarity > 0.55:
-        novelty_score = 3
+        similarity_novelty_score = 3
     elif max_similarity > 0.45:
-        novelty_score = 4
+        similarity_novelty_score = 4
     else:
-        novelty_score = 5
+        similarity_novelty_score = 5
     
-    return novelty_score, max_similarity, avg_similarity
+    # Application novelty-based score
+    application_novelty_score, application_reasoning = assess_application_novelty(idea_description)
+    
+    # Take max of the two scores
+    if application_novelty_score is not None:
+        final_novelty_score = max(similarity_novelty_score, application_novelty_score)
+    else:
+        final_novelty_score = similarity_novelty_score
+        application_reasoning = "Application novelty check unavailable"
+    
+    return final_novelty_score, max_similarity, avg_similarity, similarity_novelty_score, application_novelty_score, application_reasoning
 
 def evaluate_idea(idea_description):
     """
@@ -81,7 +146,7 @@ def evaluate_idea(idea_description):
         print("❌ Could not generate embedding for the idea.")
         return None
 
-    novelty_score, max_sim, avg_sim = calculate_novelty_score(idea_embedding)
+    novelty_score, max_sim, avg_sim, sim_novelty, app_novelty, app_reasoning = calculate_novelty_score(idea_embedding, idea_description)
 
     prompt = f"""You are an expert research evaluator. Rate the following research idea on a scale of 1 to 5 for Feasibility, Impact, Clarity, and Grounding.
 
@@ -147,8 +212,11 @@ Brief justification: [Your justification]
         print("\nIDEA EVALUATION")
         print("=" * 70)
         print(f"NOVELTY: {novelty_score}/5")
-        print(f"  Max similarity to corpus: {max_sim:.3f}")
-        print(f"  Avg similarity to corpus: {avg_sim:.3f}")
+        print(f"  Similarity-based: {sim_novelty}/5 (max corpus sim: {max_sim:.3f})")
+        if app_novelty is not None:
+            print(f"  Application-based: {app_novelty}/5")
+            print(f"  → {app_reasoning[:100]}..." if len(app_reasoning) > 100 else f"  → {app_reasoning}")
+        print(f"  Final score: max({sim_novelty}, {app_novelty if app_novelty else 'N/A'}) = {novelty_score}")
         print(f"\nFeasibility: {llm_scores.get('Feasibility', 'N/A')}/5")
         print(f"Impact: {llm_scores.get('Impact', 'N/A')}/5")
         print(f"Clarity: {llm_scores.get('Clarity', 'N/A')}/5")
