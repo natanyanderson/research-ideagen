@@ -154,7 +154,7 @@ def fetch_and_store_papers():
                     cursor.execute("""
                         INSERT INTO embeddings (paper_id, embedding)
                         VALUES (?, ?)
-                    """, (paper["paper_id"], np.array(embedding).tobytes()))
+                    """, (paper["paper_id"], np.array(embedding, dtype=np.float32).tobytes()))
                     stored_count += 1
                 else:
                     failed_count += 1
