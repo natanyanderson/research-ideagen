@@ -9,10 +9,10 @@ This project builds a pipeline to automatically generate, evaluate, and refine r
 ## What We've Built
 
 ### 1. Literature Ingestion (`src/ingest_arxiv.py`)
-- Fetches CS papers from arXiv (2024-2025)
+- Fetches the most recent CS papers from arXiv
 - Stores metadata in SQLite database
 - Generates embeddings for abstracts using OpenAI's `text-embedding-3-small`
-- Default: 1000 papers
+- Default: 1000 most recent papers
 
 ### 2. Semantic Search (`src/search_papers.py`)
 - Query the corpus using natural language
@@ -31,12 +31,15 @@ This project builds a pipeline to automatically generate, evaluate, and refine r
 
 ### 5. Idea Evaluation (`src/evaluate_idea.py`)
 - Scores research ideas on 5 criteria (1-5 scale):
-  - **Novelty**: Semantic similarity to corpus (lower = more novel)
+  - **Novelty**: Dual scoring approach (takes max of two):
+    - Semantic similarity to corpus (lower similarity = higher novelty)
+    - LLM-based application novelty (assesses whether idea applies established methods to novel domains)
   - **Feasibility**: Can it be done with current methods?
   - **Impact**: Would it matter if successful?
   - **Clarity**: Is it well-defined and testable?
   - **Grounding**: Is it based on solid reasoning?
 - Returns overall score (average of 5 criteria)
+- The dual novelty approach catches both truly novel methods AND novel applications of known methods
 
 ### 6. Generate-Eval-Refine Pipeline (`src/generate_and_refine.py`)
 - Iteratively generates and evaluates ideas
@@ -92,14 +95,18 @@ python src/generate_and_refine.py "your research topic"
 
 - **Research idea evaluation** has the lowest coverage (avg similarity: 0.198)
 - Well-covered topics like RAG tend to produce more optimization-focused ideas
-- Underexplored topics tend to produce more "apply X to Y" ideas (which score lower on our eval)
+- Underexplored topics tend to produce more "apply X to Y" ideas (which would score lower on pure similarity-based novelty)
+- **Dual novelty scoring** successfully addresses the limitation of pure similarity metrics:
+  - Pure similarity can miss ideas that apply established methods to novel domains
+  - Application-based LLM check catches domain transfer novelty
+  - Final novelty score is max(similarity score, application score)
 - The pipeline successfully filters weak ideas and converges on novel, well-grounded research directions
 
 ## Current Corpus
 
-- 1000 CS papers from arXiv (2024-2025)
+- 1000 most recent CS papers from arXiv
 - Stored in `papers.db` (SQLite)
-- Abstracts embedded with `text-embedding-3-small`
+- Abstracts embedded with `text-embedding-3-small` (float32 format)
 
 ## Next Steps
 
