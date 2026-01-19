@@ -11,6 +11,15 @@ Researchers using AI tools (ChatGPT) will generate more ideas but with lower nov
 - N = 20 participants (grad students/postdocs in CS or related fields)
 - 2 conditions: Control (n=10) vs AI-Assisted (n=10)
 
+## Exclusion Criteria
+Participants will be excluded if they:
+- Have prior knowledge of the study hypotheses or research questions
+- Were involved in the design or development of this study
+- Have professional experience developing or evaluating AI-based tools
+- Are currently working on projects related to AI idea generation or evaluation
+
+These criteria ensure participants approach the task naturally without bias from methodological knowledge or expertise that could influence their behavior.
+
 ## Procedure
 Participants are given a research topic and 30 minutes to generate 5 research ideas.
 
