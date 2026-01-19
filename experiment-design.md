@@ -21,6 +21,12 @@ Participants will be excluded if they:
 These criteria ensure participants approach the task naturally without bias from methodological knowledge or expertise that could influence their behavior.
 
 ## Procedure
+**Estimated completion time: ~45 minutes per participant**
+- Pre-survey: 5 minutes
+- Orientation and instructions: 5 minutes
+- Ideation task: 30 minutes
+- Wrap-up: 5 minutes
+
 Participants are given a research topic and 30 minutes to generate 5 research ideas.
 
 **Control group**: Brainstorm independently using whatever methods they normally use (paper, notes, web search, etc.)
