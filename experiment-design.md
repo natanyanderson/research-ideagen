@@ -29,10 +29,53 @@ All participants will complete a brief survey before the ideation task to measur
 5. Have you ever used AI tools specifically for generating research ideas? (Yes / No / Not sure)
 6. How many years have you been involved in academic research? (Less than 1 year / 1-2 years / 3-5 years / 5+ years)
 
+## Evaluation Rubric
+Expert evaluators (2-3 per idea) will independently score each generated research idea on the following 5 criteria using a 1-5 scale:
+
+**1. Novelty** - How original is the research idea?
+- 1 = well-established approach, no new angle
+- 2 = minor variation on existing work
+- 3 = meaningful extension or new application
+- 4 = novel combination or fresh perspective
+- 5 = highly original, significant departure from prior work
+
+**2. Feasibility** - Can this be realistically executed?
+- 1 = requires unavailable resources or infeasible methods
+- 2 = major technical barriers, unclear path forward
+- 3 = challenging but doable with standard methods
+- 4 = clear execution plan with available resources
+- 5 = straightforward implementation, low technical risk
+
+**3. Potential Impact** - Would this meaningfully advance the field?
+- 1 = minimal contribution, limited scope
+- 2 = incremental improvement, narrow application
+- 3 = solid contribution to specific subfield
+- 4 = addresses important gap, broad relevance
+- 5 = transformative potential, field-defining contribution
+
+**4. Clarity** - How well-defined is the idea?
+- 1 = vague or confusing, hard to understand what's proposed
+- 2 = general direction but missing key details
+- 3 = clear core idea, some specifics need work
+- 4 = well-articulated with concrete next steps
+- 5 = precise problem statement and approach
+
+**5. Grounding** - Does the idea connect to existing literature?
+- 1 = disconnected from relevant work, lacks context
+- 2 = minimal connection, misses key related work
+- 3 = adequate grounding in existing research
+- 4 = well-connected to relevant literature
+- 5 = deeply grounded, builds clearly on prior work
+
+**Evaluation Instructions:**
+- Evaluate each idea independently without comparing to other submissions
+- Provide brief justification for each score
+- 2-3 evaluators per idea to ensure inter-rater reliability
+
 ## Measurements
-1. **Novelty**: Semantic similarity to existing literature corpus (using our embeddings pipeline)
+1. **Novelty**: Combined metric from expert rubric scores + semantic similarity to existing literature corpus (using our embeddings pipeline)
 2. **Diversity**: Semantic distance between participant's own ideas
-3. **Feasibility**: Expert panel ratings (1-5 scale)
+3. **Feasibility**: Expert rubric scores (averaged across evaluators)
 4. **Quantity**: Total number of distinct ideas generated
 5. **Time to first idea**: Cognitive load indicator
 
