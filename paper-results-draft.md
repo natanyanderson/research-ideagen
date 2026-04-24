@@ -10,6 +10,7 @@ We evaluated our pipeline on several research topics across different areas of c
 - Application-based novelty: 4/5
 - Final novelty: 4/5
 - Overall score: 4.1/5.0
+- *Note: Both novelty dimensions score high here; this example illustrates a case where the method and its application are independently novel, though further validation is needed to confirm this classification is not an artifact of corpus coverage gaps.*
 
 **Example 2: Agricultural Irrigation Scheduling**
 - Generated Idea: "Using reinforcement learning for adaptive agricultural irrigation scheduling based on soil moisture sensors and weather predictions"
@@ -38,10 +39,9 @@ Across 50 test generations covering 10 different topics, we found:
 
 ## 4.2 Evaluation Framework Design
 
-To validate the quality of AI-generated ideas against human-generated baselines, we designed a controlled experiment comparing three conditions:
+To validate the quality of AI-generated ideas against human-generated baselines, we designed a controlled experiment comparing two conditions:
 1. Control (unaided ideation)
 2. AI-assisted (using our pipeline)
-3. Collaborative (iterative human-AI refinement)
 
 We developed a standardized evaluation rubric with five criteria, each scored 1-5:
 
@@ -55,7 +55,7 @@ We developed a standardized evaluation rubric with five criteria, each scored 1-
 
 Three expert evaluators (CS PhD students/postdocs) will independently score each idea. We expect moderate inter-rater reliability (κ > 0.5) and plan to use majority voting for final classifications.
 
-**Hypothesis:** AI-assisted ideation will increase quantity and feasibility scores but potentially decrease novelty due to anchoring effects. The collaborative condition may balance both dimensions.
+**Hypothesis:** AI-assisted ideation will increase quantity and feasibility scores but potentially decrease novelty due to anchoring effects.
 
 ## 4.3 Discussion
 
@@ -65,7 +65,7 @@ The dual novelty scoring mechanism proved to be the most consequential design de
 
 However, the results also highlight a tension in automated idea evaluation: higher novelty does not necessarily mean higher quality. Some of the ideas scoring well on both novelty dimensions were underspecified or lacked clear evaluation pathways. This suggests that novelty scoring should be treated as a necessary but not sufficient signal, and that feasibility and clarity criteria carry more weight in determining whether an idea is actionable.
 
-Comparing the three examples, we observe that ideas at intermediate similarity scores (0.48–0.52) tend to score best overall. Ideas with very high similarity (>0.65) are reliably flagged as incremental, while ideas with very low similarity sometimes reflect hallucinated or out-of-scope concepts rather than genuine novelty. This inverted-U pattern warrants further investigation and may inform future threshold calibration.
+The three examples also suggest a potential relationship between similarity score and overall idea quality: ideas at intermediate similarity scores (0.48–0.52) tend to score best overall, while very high similarity (>0.65) correlates with incremental ideas and very low similarity may indicate hallucinated or out-of-scope concepts. We treat this as a hypothesis for future investigation rather than a finding—three examples are insufficient to establish a pattern—but it motivates a more systematic analysis of similarity score distributions across a larger test set.
 
 Finally, the ~45 second generation cycle time is promising for practical use. A researcher could plausibly run the pipeline over a lunch break and return to a ranked shortlist of ideas, which aligns with our goal of augmenting rather than replacing human ideation.
 
@@ -73,7 +73,7 @@ Finally, the ~45 second generation cycle time is promising for practical use. A 
 
 **Corpus Coverage:** Our current corpus of ~1000 arXiv papers provides reasonable coverage of recent CS trends but lacks depth in specialized subfields. Scaling to 50K+ papers from multiple sources (arXiv, Semantic Scholar, conference proceedings) would improve both gap identification and novelty assessment.
 
-**Evaluation Reliability:** The application novelty component relies on GPT-4's judgment, which introduces potential biases. Temperature settings (0.3 for application novelty, 0.7 for other criteria) cause score variance (±0.4 points across runs). Future work should explore ensemble approaches or fine-tuned models for more stable assessments.
+**Evaluation Reliability:** The application novelty component relies on GPT-4's judgment, which introduces potential biases. Temperature settings (0.3 for application novelty, 0.7 for other criteria) introduce score variance across repeated runs; the magnitude of this variance has not been systematically measured and should be characterized in future work. Future work should explore ensemble approaches or fine-tuned models for more stable assessments.
 
 **Domain Specificity:** We focused exclusively on computer science. Extending to other domains (biology, physics, social sciences) would require domain-specific corpora and potentially adjusted evaluation criteria.
 
