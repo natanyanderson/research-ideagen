@@ -1,0 +1,11 @@
+# Conclusion
+
+We presented a research ideation pipeline that addresses a core limitation of existing LLM-based approaches: the conflation of methodological and application novelty in similarity-based scoring. By decoupling these two signals through dual novelty scoring, our system avoids a systematic failure mode in which ideas are rated as novel simply because their application domain is underrepresented in the corpus—even when the underlying method is well-established.
+
+Across 50 generated ideas covering 10 research topics, we found that 18% of ideas would have been incorrectly rejected by a similarity-only filter, and 32% scored higher on application novelty than on similarity-based novelty. These results provide initial evidence that the dual scoring approach captures a meaningful distinction that single-metric methods miss. The agricultural irrigation example—where a well-known RL method applied to an underrepresented domain receives a lower application novelty score despite high corpus distance—illustrates this concretely.
+
+Our preliminary findings motivate a broader question: does AI-assisted ideation help researchers break out of anchoring patterns, or does it introduce new ones? We have designed a controlled user study (N=20) to investigate this directly, comparing AI-assisted ideation against a control condition using a standardized five-criterion rubric scored by expert evaluators. The study is currently pending IRB approval.
+
+Several limitations temper these conclusions. Our corpus remains small (~1,000 arXiv papers), the application novelty component relies on GPT-4’s judgment without empirical calibration, and we have not yet validated whether high-scoring ideas translate to successful research outcomes. These are the most pressing directions for future work.
+
+More broadly, this paper is a step toward research tools that augment rather than replace human scientific creativity. The goal is not to automate discovery, but to help researchers identify promising directions they might otherwise overlook—particularly those that cross disciplinary boundaries or challenge established paradigms. If AI systems can help surface those ideas reliably, and if human researchers can evaluate and refine them effectively, the combination may meaningfully accelerate the pace of scientific progress.
