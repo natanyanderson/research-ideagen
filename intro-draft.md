@@ -10,7 +10,7 @@ In this paper, we present a research ideation pipeline that combines automated l
 
 1. An end-to-end pipeline for generating and evaluating research ideas, grounded in a corpus of 1,000 scientific papers.
 2. A dual novelty scoring method that separately quantifies methodological and application novelty, combined through a hybrid aggregation rule.
-3. Preliminary results on eight test cases demonstrating that our dual approach correctly identifies domain-transfer-only ideas that similarity-based methods misclassify as fully novel.
+3. Preliminary results on 50 generated ideas across 10 topics demonstrating that our dual approach correctly identifies domain-transfer-only ideas that similarity-based methods misclassify as fully novel.
 4. An experimental design for a planned user study (N=20) comparing AI-assisted ideation against a control condition, with the goal of measuring whether AI assistance helps researchers break out of anchoring patterns.
 
 The remainder of this paper is organized as follows. Section 2 reviews related work on automated research ideation, novelty assessment, and anchoring effects in scientific creativity. Section 3 describes our system architecture and the dual novelty scoring approach. Section 4 presents preliminary results from our test cases. Section 5 outlines the design of our planned user study, and Section 6 discusses limitations and future directions.
