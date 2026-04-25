@@ -12,7 +12,7 @@ This study investigates whether AI-assisted research ideation helps or hinders t
 - **Eligibility criteria:** Active CS researchers (graduate students, postdocs, or faculty) with at least 1 year of research experience
 - **Exclusion criteria:** Participants with direct prior exposure to the research ideation pipeline used in this study
 - **Recruitment:** Participants will be recruited via departmental mailing lists and posted flyers. Participation is voluntary and may be withdrawn at any time without penalty.
-- **Compensation:** Participants will receive a $20 Amazon gift card for completing the study (~60 minutes total)
+- **Compensation:** Participants will receive a $15 Amazon gift card for completing the study (~60 minutes total)
 
 ### 3. Study Design
 
@@ -48,7 +48,7 @@ All sessions conducted remotely via Zoom. Ideation responses collected via a sha
 
 ### 6. Data Storage & Privacy
 
-- All data stored on password-protected institutional storage
+- All data stored on university-approved encrypted cloud storage (Box, provisioned through institutional IT)
 - Participant responses de-identified before expert evaluation
 - No personally identifiable information retained beyond consent forms, which are stored separately from study data
 - Data retained for 5 years per institutional policy, then destroyed
