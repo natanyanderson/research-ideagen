@@ -19,12 +19,12 @@ We’re recruiting CS researchers for a paid study on AI-assisted research ideat
 - At least 1 year of active research experience
 - No prior exposure to our ideation pipeline required (or expected!)
 
-**This study has been approved by the IRB** ([Protocol #TBD]).
+**This study has been approved by the IRB** (Protocol #[IRB PROTOCOL NUMBER]).
 
-Interested? Sign up here: **[SIGN-UP LINK]**
-Questions? Reach out to [PI NAME] at [PI EMAIL].
+Interested? Sign up here: **[SIGN-UP LINK — Google Form]**
+Questions? Reach out to us at researchideagen@gmail.com.
 
 Thanks!
 
-[PI NAME]
-[Lab Name], [University]
+Natanya Anderson
+Research Ideation Lab
