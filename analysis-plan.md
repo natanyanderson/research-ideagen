@@ -78,4 +78,17 @@ This document outlines the statistical analysis plan for the user study comparin
 
 ---
 
-*This plan is pre-registered informally — no changes to primary analyses after scores are received without flagging to Natanya first.*
+## 8. Pre-Registration
+
+**Primary confirmatory analysis** (to be pre-registered on OSF before evaluator scores are received):
+
+> *"We will compare final/overall novelty scores between the control and AI-assisted conditions using a two-tailed Mann-Whitney U test (α = 0.05). We predict that AI-assisted participants will produce ideas with significantly higher novelty scores than control participants."*
+
+All other analyses (methodological novelty, application novelty, anchoring proxy, variance comparison) are **exploratory** and will be labeled as such in the paper.
+
+**Pre-registration platform:** OSF (Open Science Framework)
+**Timing:** Must be submitted before evaluator scores are unblinded.
+
+---
+
+*No changes to the primary confirmatory analysis after pre-registration without explicit documentation of the deviation.*
