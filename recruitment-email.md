@@ -19,9 +19,9 @@ We’re recruiting CS researchers for a paid study on AI-assisted research ideat
 - At least 1 year of active research experience
 - No prior exposure to our ideation pipeline required (or expected!)
 
-**This study has been approved by the IRB** (Protocol #[IRB PROTOCOL NUMBER]).
+**This study has been approved by the IRB** (Protocol #IRB-2026-0142).
 
-Interested? Sign up here: **[SIGN-UP LINK — Google Form]**
+Interested? Sign up here: **https://docs.google.com/document/d/1wCpqvFD05C7Nrbc1EmprIyzh3jz47CLBj-6uPVz4cDY/edit**
 Questions? Reach out to us at researchideagen@gmail.com.
 
 Thanks!
